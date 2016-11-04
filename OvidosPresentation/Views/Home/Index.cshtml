@@ -1,0 +1,101 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+</head>
+<body>
+    <div>
+        <ul id="kitapListesi"></ul>
+    </div>
+    <script src="~/Scripts/jquery-2.0.3.min.js"></script>
+    <script>
+        $().ready(function () {
+
+            //Öncelikle localstorage kontrol edilecek doluysa oradaki isim beforeSend ile gönderilip authorization yapılacak.
+            //Firstly checks the localstorage if localstorage was loaded, beforeSend[bf] will send datas (localstorage's data) and give a authorization
+            if (localStorage.Session) {
+                //localStorage'in Session key'ine ait veri boştan farklı ise ajax işlemleri gerçekleştirilir. Çünkü yetkilendirme buna göre yapılacak.
+                //İf localstorage's sesison key isn't null, this ajax function will running. Because authorization depends on this.
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",  //[bf]
+                    url: "http://apis.fatihbaytar.com/api/kitaps",
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader("Authorization", "Basic " + localStorage.Session);
+                    },
+                    xhrFields: {
+                        widthCredentials: true
+                    },
+                    success: function (retData) {
+                        //console.log(retData);
+                        for (var i = 0; i < retData.length; i++) {
+                            $('#kitapListesi').append('<li>' + retData[i].Ad + ' ' + retData[i].Yazar + ' ' + retData[i].StokMiktari + ' adet <button onclick="tiklandi(this)" href="#" id="kitap' + retData[i].Id + '">Ödünç Al</button></li>');
+                        }
+
+
+                    },
+                    error: function (error1, error2, error3) {
+                        console.log(error3);
+                        if (error3 == "Unauthorized") {
+                            //Yetkisiz kullanıcılar Login sayfasına yönlendirilir. Bundan önce localStorage'de bir kalıntı kaldıysa temizlenir.
+                            //unauthorized users canalize to login page. Before this aciton;
+                            //system check the localstorage and clean datas in localstorage belonging to the user who canalize the login page.
+                            localStorage.clear();
+                            location.href = '@Url.Action("Login","Home")';
+
+                        }
+                    }
+                });
+            }
+            else {
+                //localStorage.Session değeri boşsa Login sayfasına yönlendirilecek.
+                //İf localStroge.Session value is null then user will canalize to the Login page
+                location.href = '@Url.Action("Login","Home")';
+            }
+            //butona tıklandığında mesaj gönderecek ve veritabanına kaydedilecek.
+            //when user clicked the button, system send message and message will insert to the DB
+
+        });
+        function tiklandi(element) {
+            var kitap = {};
+
+            var kitapID = element.id.substr(5);
+            
+            kitap.Id = kitapID;
+            
+            
+            //console.log(element.id.substr(5));
+            $.ajax({
+                type: "post",
+                url: "http://apis.fatihbaytar.com/api/kitaps",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                data: JSON.stringify(kitap),
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("Authorization", "Basic " + localStorage.Session);
+                },
+                xhrFields: {
+                    widthCredentials: true
+                },
+                success: function (gelenVeri) {
+                    console.log(gelenVeri);
+                    if (gelenVeri) {
+                        location.href = '@Url.Action("Index","Home")';
+                    }
+                },
+                error:function(err1, err2, err3) {
+                    console.log(err3);
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>

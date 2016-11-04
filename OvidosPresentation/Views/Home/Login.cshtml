@@ -1,0 +1,65 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Login</title>
+</head>
+<body>
+<div>
+    <input type="text" id="txbEmail" placeholder="Full Name" />
+    <br />
+    <input type="password" id="txbPassword" placeholder="Password" /><br />
+    
+    <button type="button" id="btnLogin">Login</button><label style="display:none" id="lblState"></label>
+    <br />
+    
+</div>
+    <script src="~/Scripts/jquery-2.0.3.js"></script>
+    <script>
+        $().ready(function () {
+            localStorage.clear();
+            $('#btnLogin').click(function () {
+                //login butonuna tıklandığında kullanıcı bilgileri api/members get action'ına gönderilecek.
+                //When clicking the login button; system will send all user datas to api/members get action
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",
+                    url: "http://apis.fatihbaytar.com/api/kitaps",
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader("Authorization", "Basic " + $('#txbEmail').val()+' '+$('#txbPassword').val());
+                    },
+                    xhrFields: {
+                        widthCredentials: true
+                    },
+                    success: function (retData) {
+                        console.log(retData);
+                        //Yetkilendirmeler de doğruysa localStorage.Session key'ine veri yazılacak ve kullanıcı Index (mesaj yazacağı) sayfaya yönlendirilecek
+                        //İf delegations are correct, system will write datas to localstorage.Session's key and user canalized to the Index page (where the page users send messages)
+                        localStorage.setItem("Session", $('#txbEmail').val()+' '+$('#txbPassword').val());
+                        location.href = '@Url.Action("Index","Home")';
+
+                    },
+                    error: function (error1, error2, error3) {
+                        console.log(error3);
+                        if (error3 == "Unauthorized") {
+                            //Kullanıcı mevcut değilse localStorage'in kalıntıları temizlenecek ve kullanıcı uyarılacak.
+                            //İf there isn't a user like that, system will clean localStroge's residue and system will warn the user
+                            localStorage.clear();
+                            $('#lblState').css('display', 'inline').text('Login incorrect...');
+
+                        }
+                    }
+                });
+
+
+            });
+        });
+    </script>
+</body>
+</html>
